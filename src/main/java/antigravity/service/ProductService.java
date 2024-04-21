@@ -11,12 +11,33 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProductService {
     private final ProductRepository repository;
+    private final PromotionService promotionService;
 
+    public boolean isValid( int price ){
+        return 10000 <= price && price <= 10000000;
+    }
     public ProductAmountResponse getProductAmount(ProductInfoRequest request) {
-        System.out.println("상품 가격 추출 로직을 완성 시켜주세요.");
-
         Product product = repository.getProduct(request.getProductId());
 
-        return null;
+        int originProductPrice = product.getPrice();
+
+        if(isValid(originProductPrice)){ // 상품 가격 유효셩 검사
+
+            int discountedPrice = promotionService.calculateDiscount(originProductPrice, request.getCouponIds());
+
+            int finalPrice = (int) Math.floor( ( (originProductPrice - discountedPrice) / 1000 ) * 1000 );
+
+            ProductAmountResponse response = ProductAmountResponse.builder()
+                    .name(product.getName())
+                    .originPrice(originProductPrice)
+                    .discountPrice(originProductPrice - discountedPrice)
+                    .finalPrice(finalPrice)
+                    .build();
+
+            return response;
+
+        } else{
+            return null; //todo.예외 처리
+        }
     }
 }
