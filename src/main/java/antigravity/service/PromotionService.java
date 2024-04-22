@@ -4,6 +4,8 @@ import antigravity.domain.entity.Promotion;
 import antigravity.repository.PromotionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.Arrays;
 import java.util.Date;
 
 @RequiredArgsConstructor
@@ -11,22 +13,14 @@ import java.util.Date;
 public class PromotionService {
     private final PromotionRepository promotionRepository;
 
-    public int calculateDiscount(int originPrice, int[] couponIds){
-
-        int discountedPrice = 0;
-
+    public int calculateDiscount(int originPrice, int[] couponIds) {
         Date currentDate = new Date();
 
-        for (int couponId : couponIds) {
-            Promotion promotion = promotionRepository.getPromotion(couponId);
-
-            if ( this.isValid(promotion, currentDate) ) { //날짜 유효성 검사
-
-                discountedPrice += calculateDiscount(promotion, originPrice);
-            }
-        }
-
-        return discountedPrice;
+        return Arrays.stream(couponIds)
+                .mapToObj(couponId -> promotionRepository.getPromotion(couponId))
+                .filter(promotion -> isValid(promotion, currentDate))
+                .mapToInt(promotion -> calculateDiscount(promotion, originPrice))
+                .sum();
     }
     public int calculateDiscount(Promotion promotion, int originalPrice) {
 

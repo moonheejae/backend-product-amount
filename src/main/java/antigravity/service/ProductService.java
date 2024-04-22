@@ -7,6 +7,8 @@ import antigravity.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Objects;
+
 @RequiredArgsConstructor
 @Service
 public class ProductService {
@@ -16,15 +18,24 @@ public class ProductService {
     public boolean isValid( int price ){
         return 10000 <= price && price <= 10000000;
     }
-    public ProductAmountResponse getProductAmount(ProductInfoRequest request) {
-        Product product = repository.getProduct(request.getProductId());
 
+    private void validateRequest(ProductInfoRequest request) {
+        Objects.requireNonNull(request, "Request cannot be null.");
+        if (request.getProductId() <= 0) {
+            throw new IllegalArgumentException("Product ID must be positive.");
+        }
+        if (request.getCouponIds() == null || request.getCouponIds().length == 0) {
+            throw new IllegalArgumentException("Coupon IDs cannot be empty.");
+        }
+    }
+    public ProductAmountResponse getProductAmount(ProductInfoRequest request) {
+        validateRequest(request); // request 유효성 검사
+
+        Product product = repository.getProduct(request.getProductId());
         int originProductPrice = product.getPrice();
 
-        if(isValid(originProductPrice)){ // 상품 가격 유효셩 검사
-
+        if( isValid(originProductPrice) ){ // 상품 가격 유효성 검사
             int discountedPrice = promotionService.calculateDiscount(originProductPrice, request.getCouponIds());
-
             int finalPrice = (int) Math.floor( ( (originProductPrice - discountedPrice) / 1000 ) * 1000 );
 
             ProductAmountResponse response = ProductAmountResponse.builder()
@@ -37,7 +48,8 @@ public class ProductService {
             return response;
 
         } else{
-            return null; //todo.예외 처리
+
+            throw new IllegalArgumentException("Response is not available.");
         }
     }
 }
