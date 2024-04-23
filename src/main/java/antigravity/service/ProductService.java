@@ -34,7 +34,12 @@ public class ProductService {
         Product product = repository.getProduct(request.getProductId());
         int originProductPrice = product.getPrice();
 
-        if( isValid(originProductPrice) ){ // 상품 가격 유효성 검사
+        if( !isValid(originProductPrice) ){ // 상품 가격 유효성 검사
+
+            throw new IllegalArgumentException("Product Price is not valid.");
+
+        } else{
+
             int discountedPrice = promotionService.calculateDiscount(originProductPrice, request.getCouponIds());
             int finalPrice = (int) Math.floor( ( (originProductPrice - discountedPrice) / 1000 ) * 1000 );
 
@@ -46,10 +51,6 @@ public class ProductService {
                     .build();
 
             return response;
-
-        } else{
-
-            throw new IllegalArgumentException("Response is not available.");
         }
     }
 }

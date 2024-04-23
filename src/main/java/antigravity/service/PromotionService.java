@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -15,12 +16,22 @@ public class PromotionService {
 
     public int calculateDiscount(int originPrice, int[] couponIds) {
         Date currentDate = new Date();
+        int totalDiscount = 0;
 
-        return Arrays.stream(couponIds)
-                .mapToObj(couponId -> promotionRepository.getPromotion(couponId))
-                .filter(promotion -> isValid(promotion, currentDate))
-                .mapToInt(promotion -> calculateDiscount(promotion, originPrice))
-                .sum();
+        List<Promotion> promotionList = promotionRepository.getPromotion(couponIds);
+
+        for (Promotion promotion : promotionList) {
+            if ( !isValid(promotion, currentDate) ) {
+
+                throw new IllegalArgumentException("calculateDiscount is not available.");
+
+            } else {
+
+                totalDiscount += calculateDiscount(promotion, originPrice);
+            }
+        }
+
+        return totalDiscount;
     }
     public int calculateDiscount(Promotion promotion, int originalPrice) {
 

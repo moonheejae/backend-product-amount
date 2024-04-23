@@ -6,18 +6,28 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 @RequiredArgsConstructor
 @Repository
 public class PromotionRepository {
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    public Promotion getPromotion(int id) {
-        String query = "SELECT * FROM `promotion` WHERE id = :id ";
+    public List<Promotion> getPromotion(int[] ids) {
+
+        String inClause = IntStream.range(0, ids.length)
+                .mapToObj(i -> ":id" + i)
+                .collect(Collectors.joining(", "));
+
+        String query = "SELECT * FROM `promotion` WHERE id IN (" + inClause + ")";
 
         MapSqlParameterSource params = new MapSqlParameterSource();
-        params.addValue("id", id);
-
-        return namedParameterJdbcTemplate.queryForObject(
+        for (int i = 0; i < ids.length; i++) {
+            params.addValue("id" + i, ids[i]);
+        }
+        return namedParameterJdbcTemplate.query(
                 query,
                 params,
                 (rs, rowNum) -> Promotion.builder()
